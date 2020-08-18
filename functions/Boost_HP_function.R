@@ -67,11 +67,25 @@ Boost_HP <- function(count,sample_info, normalization = 2, clustermethod = 'Mclu
     for (i in 1:sample_num){
       count_nor[i,] <- 10000*count[i,]/count_rowsum[i]
     }
+    mIQR <- IQR(count_nor[,i])
+    if (mIQR != 0)
+      {
+      list_large <- which(count_nor[,i] > median(count_nor[,i]) + 3*mIQR)
+      list_small <- NULL
+      }
+    else
+      {
+      list_small <- NULL
+      list_large <- NULL
+    }
   }
   
   else if (normalization == 2)
   {
     count_nor <- normalization2(count)
+    mIQR <- IQR(count_nor[,i])
+    list_large <- which(count_nor[,i] > median(count_nor[,i]) + 3*mIQR)
+    list_small <- which(count_nor[,i] < median(count_nor[,i]) - 3*mIQR)
   }
   
   else if (normalization == 3)
@@ -90,9 +104,6 @@ Boost_HP <- function(count,sample_info, normalization = 2, clustermethod = 'Mclu
     
     set.seed(123)
     for (i in 1:gene_num){
-      mIQR <- IQR(count_nor[,i])
-      list_large <- which(count_nor[,i] > median(count_nor[,i]) + 3*mIQR)
-      list_small <- which(count_nor[,i] < median(count_nor[,i]) - 3*mIQR)
       list_remain <- setdiff(1:sample_num, union(list_large, list_small))
       k <- Mclust(count_nor[list_remain,i], G=2)
       if (k$parameters$mean[1]>k$parameters$mean[2])
