@@ -52,6 +52,8 @@ Boost_HP <- function(count,sample_info, normalization = 2, clustermethod = 'Mclu
   gene_num <- ncol(count)
   sample_num <- nrow(count)
   
+  sample_info <- round(sample_info)
+  
   # normalization
   
   if (normalization == 1)
