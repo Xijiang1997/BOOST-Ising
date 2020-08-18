@@ -15,11 +15,15 @@ normalization2 <- function(counts) {
   
   ## regress out log total counts
   norm_counts <- log(counts + 1/(2 * phi))
-  total_counts <- apply(counts, 2, sum)
-  res_norm_counts <- t(apply(norm_counts, 1, function(x){resid(lm(x ~ log(total_counts)))} ))
+  total_counts <- apply(counts, 1, sum)
+  log_total_counts <- log(total_counts)
+  coeff <- apply(norm_counts, 2, function(x){coef(lm(x ~ log_total_counts))} )
+  prod <- log_total_counts %*% t(as.matrix(coeff[2,]))
+  res_norm_counts <- norm_counts - prod
   
   return(res_norm_counts)
 }
+
 
 
 transform_data <- function(count, loc){
