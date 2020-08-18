@@ -3,8 +3,8 @@
 library(mclust)
 library(lattice)
 
-source("functions_potts.R");
-Rcpp::sourceCpp('functions_potts_omega.cpp');
+source("functions/functions_potts.R");
+Rcpp::sourceCpp('functions/functions_potts_omega.cpp');
 
 # functions
 
