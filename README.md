@@ -33,6 +33,6 @@ In this function, we need to determine which normalization method is used. If `n
 To obtain detected SE genes, we can check the adjusted p-values. 
 
 ```r
-SE_gene <- colnames(detect_result)[which(detect_result$pvalues_neg_ad< 0.05)
+SE_gene <- rownames(detect_result)[which(detect_result$pvalues_neg_ad< 0.05)
 ```
 
