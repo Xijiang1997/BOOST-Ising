@@ -51,7 +51,7 @@ filter_count <- function(count, sample_info, min_total = 10,min_percentage = 0.1
 
 # main function
 
-Boost_HP <- function(count,sample_info, normalization = 2, clustermethod = 'Mclust', plotfigure = FALSE)
+Boost_HP <- function(count,sample_info, normalization = 2, clustermethod = 'Mclust', dout = 1.5)
 {
   gene_num <- ncol(count)
   sample_num <- nrow(count)
@@ -70,7 +70,7 @@ Boost_HP <- function(count,sample_info, normalization = 2, clustermethod = 'Mclu
     mIQR <- IQR(count_nor[,i])
     if (mIQR != 0)
       {
-      list_large <- which(count_nor[,i] > median(count_nor[,i]) + 3*mIQR)
+      list_large <- which(count_nor[,i] > median(count_nor[,i]) + dout*mIQR)
       list_small <- NULL
       }
     else
@@ -84,8 +84,8 @@ Boost_HP <- function(count,sample_info, normalization = 2, clustermethod = 'Mclu
   {
     count_nor <- normalization2(count)
     mIQR <- IQR(count_nor[,i])
-    list_large <- which(count_nor[,i] > median(count_nor[,i]) + 3*mIQR)
-    list_small <- which(count_nor[,i] < median(count_nor[,i]) - 3*mIQR)
+    list_large <- which(count_nor[,i] > median(count_nor[,i]) + dout*mIQR)
+    list_small <- which(count_nor[,i] < median(count_nor[,i]) - dout*mIQR)
   }
   
   else if (normalization == 3)
@@ -128,16 +128,19 @@ Boost_HP <- function(count,sample_info, normalization = 2, clustermethod = 'Mclu
     
   # Kmeans clustering
   
-  if (clustermethod == 'Kmeans'){
+ if (clustermethod == 'Kmeans'){
    
     count_binary <- matrix(0, nrow = sample_num, ncol = gene_num) 
     
     set.seed(123)
     for (i in 1:gene_num){
-      k <- kmeans(count_nor[,i], 2, nstart = 25)
+      list_remain <- setdiff(1:sample_num, union(list_large, list_small))
+      k <- kmeans(count_nor[list_remain,i], 2, nstart = 25)
       if (k$centers[1]>k$centers[2])
-      {count_binary[,i] <- 3 - k$cluster}
-      else {count_binary[,i] <- k$cluster}
+      {count_binary[list_remain,i] <- 3 - k$cluster}
+      else {count_binary[list_remain,i] <- k$cluster}
+      count_binary[list_large,i] <- 2
+      count_binary[list_small, i] <- 1
     }
     
   }
