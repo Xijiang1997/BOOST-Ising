@@ -5,20 +5,23 @@
 using namespace Rcpp;
 
 double hamiltonian_c(arma::mat P, NumericMatrix Theta, int H_min, int H_max, int L_min, int L_max);
-double hamiltonian2_c(arma::mat P, NumericMatrix Theta, IntegerMatrix Delta, NumericVector omega);
+double hamiltonian2_c_omega(arma::mat P, NumericMatrix Theta, IntegerMatrix Delta, NumericVector omega);
 int imax(int a, int b);
 int imin(int a, int b);
 double dmax(double a, double b);
 double dmin(double a, double b);
+double myabs(double a);
 int getIndex(NumericMatrix potts_info, int h, int l);
 int getSum(IntegerMatrix Delta, int k);
 IntegerMatrix rectangle2matrix(int H, int L, int H_min, int H_max, int L_min, int L_max, bool rev);
 IntegerMatrix potts2ising(IntegerMatrix Delta, int k);
-arma::mat potts_c(arma::mat P, NumericMatrix Theta, NumericVector omega);
+arma::mat potts_c_omega(arma::mat P, NumericMatrix Theta, NumericVector omega);
 arma::mat potts2_c(arma::mat P, NumericMatrix Theta, IntegerMatrix Delta);
+Rcpp::List potts_2_omega(arma::mat P, double sigma, double omega_mean, double omega_sigma, double theta_initial, double omega_initial, int NN);
+
 
 // [[Rcpp::export]]
-Rcpp::List potts_2_omega(arma::mat P) {
+Rcpp::List potts_2_omega_laplace(arma::mat P, double sigma,  double omega_mean, double omega_sigma, double theta_initial, double omega_initial, int NN) {
   // Read data information
   int H = P.n_rows;
   int L = P.n_cols;
@@ -26,20 +29,20 @@ Rcpp::List potts_2_omega(arma::mat P) {
   
   // Set hyperparameters
   double mu = 0.0;
-  double sigma = 10.0;
-  double mu_omega = 1.0;
-  double sigma_omega = 1.0;
+  //double sigma = 10.0;
+  double mu_omega = omega_mean;
+  double sigma_omega = omega_sigma;
   
   // Set algorithm settings
-  int iter = 10000;
+  int iter = NN;
   int burn = iter/2;
-  double Theta_s = 0.0;
-  int M = 1;
+  double Theta_s = theta_initial;
+  int M = 3;
   
   int i, q, qq, qqq, qqqq, l, h, m, count;
   int count_2 = 10;
   
-  double tau = 0.1;
+  double tau = 0.25;
   double hastings = 0;
   double accept = 0;
   double accept_omega = 0;
@@ -57,7 +60,7 @@ Rcpp::List potts_2_omega(arma::mat P) {
   // Initialization
   for(q = 0; q < Q; q++)
   {
-    omega(q) = 1.0;
+    omega(q) = omega_initial;
     for (qq = 0; qq < Q; qq++)
     {
       Theta(q, qq) = Theta_s;
@@ -71,7 +74,7 @@ Rcpp::List potts_2_omega(arma::mat P) {
     }
   }
   
-  
+  omega(Q-1) = 1.0;
   
   // MCMC
   for(i = 0; i < iter; i++)
@@ -85,19 +88,19 @@ Rcpp::List potts_2_omega(arma::mat P) {
       }
       omega_temp(q) = rnorm(1, omega(q), tau)(0);
       
-     for (h = 0; h < H; h++)
-     {
-       for (l = 0; l < L; l++)
-       {
-         P_temp(h, l) = P(h, l);
-       }
-     }
-     for (m = 0; m < M; m++)
-     {
-       P_temp = potts_c(P_temp, Theta_temp, omega_temp);
-     }
-      hastings = hamiltonian2_c(P_temp, Theta, Delta, omega) - hamiltonian2_c(P, Theta, Delta, omega) + hamiltonian2_c(P, Theta, Delta, omega_temp) - hamiltonian2_c(P_temp, Theta, Delta, omega_temp);
-      hastings = hastings - (omega_temp(q) - mu_omega)*(omega_temp(q) - mu_omega)/2/sigma_omega/sigma_omega + (omega(q) - mu_omega)*(omega(q) - mu_omega)/2/sigma_omega/sigma_omega;
+      for (h = 0; h < H; h++)
+      {
+        for (l = 0; l < L; l++)
+        {
+          P_temp(h, l) = P(h, l);
+        }
+      }
+      for (m = 0; m < M; m++)
+      {
+        P_temp = potts_c_omega(P_temp, Theta, omega_temp);
+      }
+      hastings = hamiltonian2_c_omega(P_temp, Theta, Delta, omega) - hamiltonian2_c_omega(P, Theta, Delta, omega) + hamiltonian2_c_omega(P, Theta, Delta, omega_temp) - hamiltonian2_c_omega(P_temp, Theta, Delta, omega_temp);
+      hastings = hastings - ((omega_temp(q) - mu_omega)*(omega_temp(q) - mu_omega)/2/sigma_omega/sigma_omega - (omega(q) - mu_omega)*(omega(q) - mu_omega)/2/sigma_omega/sigma_omega);
       if (hastings >= log(double(rand()%10001)/10000))
       {
         omega(q) = omega_temp(q);
@@ -130,10 +133,162 @@ Rcpp::List potts_2_omega(arma::mat P) {
         }
         for (m = 0; m < M; m++)
         {
-          P_temp = potts_c(P_temp, Theta_temp, omega);
+          P_temp = potts_c_omega(P_temp, Theta_temp, omega);
         }
-        hastings = hamiltonian2_c(P_temp, Theta, Delta, omega) - hamiltonian2_c(P, Theta, Delta,omega) + hamiltonian2_c(P, Theta_temp, Delta,omega) - hamiltonian2_c(P_temp, Theta_temp, Delta, omega);
-        hastings = hastings - log(sigma) - (Theta_temp(q, qq) - mu)*(Theta_temp(q, qq) - mu)/2/sigma/sigma;
+        hastings = hamiltonian2_c_omega(P_temp, Theta, Delta, omega) - hamiltonian2_c_omega(P, Theta, Delta,omega) + hamiltonian2_c_omega(P, Theta_temp, Delta,omega) - hamiltonian2_c_omega(P_temp, Theta_temp, Delta, omega);
+        hastings = hastings - myabs(Theta_temp(q, qq) - mu)/sigma + myabs(Theta(q, qq) - mu)/sigma;
+        if (hastings >= log(double(rand()%10001)/10000))
+        {
+          Theta(q, qq) = Theta_temp(q, qq);
+          Theta(qq, q) = Theta(q, qq);
+          if (i > burn) {
+            accept++;
+          }
+        }
+      }
+    }
+    
+    // Monitor the process
+    if (i*100/iter == count_2)
+    {
+      Rcout <<count_2<< "% has been done\n";
+      count_2 = count_2 + 10;
+    }
+    count = 0;
+    for(q = 0; q < Q - 1; q++)
+    {
+      for(qq = q + 1; qq < Q; qq++)
+      {
+        theta_store(i, count) = Theta(q, qq);
+        count++;
+      }
+      omega_store(i,q) = omega(q);
+    }
+    omega_store(i,(Q-1)) = omega(Q-1);
+  }
+  accept = accept/(iter - burn)/(Q*(Q - 1)/2);
+  accept_omega = accept_omega/(iter - burn)/(Q-1);
+  return Rcpp::List::create(Rcpp::Named("theta") = theta_store,Rcpp::Named("omega") = omega_store, Rcpp::Named("accept") = accept, Rcpp::Named("accept_omega") = accept_omega);
+}
+
+// [[Rcpp::export]]
+Rcpp::List potts_2_omega(arma::mat P, double sigma, double omega_mean, double omega_sigma, double theta_initial, double omega_initial, int NN) {
+  // Read data information
+  int H = P.n_rows;
+  int L = P.n_cols;
+  int Q = P.max();
+  
+  // Set hyperparameters
+  double mu = 0.0;
+  // double sigma = 10.0;
+  double mu_omega = omega_mean;
+  double sigma_omega = omega_sigma;
+  
+  // Set algorithm settings
+  int iter = NN;
+  int burn = iter/2;
+  double Theta_s = theta_initial;
+  int M = 3;
+  
+  int i, q, qq, qqq, qqqq, l, h, m, count;
+  int count_2 = 10;
+  
+  double tau = 0.25;
+  double hastings = 0;
+  double accept = 0;
+  double accept_omega = 0;
+  IntegerMatrix Delta(H, L);
+  NumericMatrix theta_store(iter, Q*(Q - 1)/2);
+  NumericMatrix Theta(Q, Q);
+  NumericMatrix Theta_temp(Q, Q);
+  NumericMatrix Theta_0(Q, Q);
+  NumericVector omega(Q);
+  NumericVector omega_temp(Q);
+  NumericMatrix omega_store(iter, Q);
+  arma::mat P_temp(H, L);
+  
+  
+  // Initialization
+  for(q = 0; q < Q; q++)
+  {
+    omega(q) = omega_initial;
+    for (qq = 0; qq < Q; qq++)
+    {
+      Theta(q, qq) = Theta_s;
+    }
+  }
+  for (h = 0; h < H; h++)
+  {
+    for (l = 0; l < L; l++)
+    {
+      Delta(h, l) = 1;
+    }
+  }
+  omega(Q-1) = 1.0;
+  
+  
+  // MCMC
+  for(i = 0; i < iter; i++)
+  {
+    // Update omega
+    for(q = 0; q < Q - 1; q++)
+    {
+      for(qq = 0; qq < Q; qq++)
+      {
+        omega_temp(qq) = omega(qq);
+      }
+      omega_temp(q) = rnorm(1, omega(q), tau)(0);
+      
+     for (h = 0; h < H; h++)
+     {
+       for (l = 0; l < L; l++)
+       {
+         P_temp(h, l) = P(h, l);
+       }
+     }
+     for (m = 0; m < M; m++)
+     {
+       P_temp = potts_c_omega(P_temp, Theta, omega_temp);
+     }
+      hastings = hamiltonian2_c_omega(P_temp, Theta, Delta, omega) - hamiltonian2_c_omega(P, Theta, Delta, omega) + hamiltonian2_c_omega(P, Theta, Delta, omega_temp) - hamiltonian2_c_omega(P_temp, Theta, Delta, omega_temp);
+      hastings = hastings - ((omega_temp(q) - mu_omega)*(omega_temp(q) - mu_omega)/2/sigma_omega/sigma_omega - (omega(q) - mu_omega)*(omega(q) - mu_omega)/2/sigma_omega/sigma_omega);
+      if (hastings >= log(double(rand()%10001)/10000))
+      {
+        
+        omega(q) = omega_temp(q);
+        if (i > burn) {
+          accept_omega++;
+        }
+      }
+    }
+    
+    // Update Theta
+    for(q = 0; q < Q - 1; q++)
+    {
+      for(qq = q + 1; qq < Q; qq++)
+      {
+        for(qqq = 0; qqq < Q; qqq++)
+        {
+          for (qqqq = 0; qqqq < Q; qqqq++)
+          {
+            Theta_temp(qqq, qqqq) = Theta(qqq, qqqq);
+          }
+        }
+        Theta_temp(q, qq) = rnorm(1, Theta(q, qq), tau)(0);
+        Theta_temp(qq, q) = Theta_temp(q, qq);
+        for (h = 0; h < H; h++)
+        {
+          for (l = 0; l < L; l++)
+          {
+            P_temp(h, l) = P(h, l);
+          }
+        }
+        for (m = 0; m < M; m++)
+        {
+          P_temp = potts_c_omega(P_temp, Theta_temp, omega);
+        }
+        hastings = hamiltonian2_c_omega(P_temp, Theta, Delta, omega) - hamiltonian2_c_omega(P, Theta, Delta,omega) + hamiltonian2_c_omega(P, Theta_temp, Delta,omega) - hamiltonian2_c_omega(P_temp, Theta_temp, Delta, omega);
+        hastings = hastings - (Theta_temp(q, qq) - mu)*(Theta_temp(q, qq) - mu)/2/sigma/sigma + (Theta(q, qq) - mu)*(Theta(q, qq) - mu)/2/sigma/sigma;
         if (hastings >= log(double(rand()%10001)/10000))
         {
           Theta(q, qq) = Theta_temp(q, qq);
@@ -246,7 +401,7 @@ double hamiltonian_c(arma::mat P, NumericMatrix Theta, int H_min, int H_max, int
 }
 
 // [[Rcpp::export]]
-double hamiltonian2_c(arma::mat P, NumericMatrix Theta, IntegerMatrix Delta, NumericVector omega) {
+double hamiltonian2_c_omega(arma::mat P, NumericMatrix Theta, IntegerMatrix Delta, NumericVector omega) {
   double hamiltonian = 0;
   int L = P.n_cols;
   int H = P.n_rows;
@@ -299,7 +454,7 @@ double hamiltonian2_c(arma::mat P, NumericMatrix Theta, IntegerMatrix Delta, Num
 }
 
 // [[Rcpp::export]]
-arma::mat potts_c(arma::mat P, NumericMatrix Theta, NumericVector Omega) {
+arma::mat potts_c_omega(arma::mat P, NumericMatrix Theta, NumericVector Omega) {
   int L = P.n_cols;
   int H = P.n_rows;
   int Q = Theta.nrow();
@@ -579,5 +734,17 @@ double dmin(double a, double b) {
   else
   {
     return b;
+  }
+}
+
+// [[Rcpp::export]]
+double myabs(double a) {
+  if(a < 0) 
+  {
+    return -a;
+  }
+  else
+  {
+    return a;
   }
 }
