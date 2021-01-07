@@ -26,9 +26,9 @@ In the above function, `min_total` is the minimum total counts, and locations ar
 
 After filteration, we can run the main detection function `Boost_HP`. 
 ```r
-detect_result <- Boost_HP(count_f, loc_f, normalization = 2, clustermethod = 'Mclust')
+detect_result <- Boost_HP (count_f,loc_f, normalization = 1, clustermethod = 'Kmeans', dout = 3,  sigma = 1, prior = 'N', prior_omega = 'noninfo')
 ```
-In this function, we need to determine which normalization method is used. If `normalization = 1`, counts data are devided by the summation of total counts for each location. If  `normalization = 2`, we use the normalization method mentioned in [SpatialDE](https://www.nature.com/articles/nmeth.4636), which is set as default. For clustering method, model-based clustering method is applied. We can choose K-means by setting ` clustermethod = 'Kmeans'`.
+In this function, we need to determine which normalization method is used. If `normalization = 1`, counts data are devided by the summation of total counts for each location. If  `normalization = 2`, we use the normalization method mentioned in [SpatialDE](https://www.nature.com/articles/nmeth.4636), which is set as default. For clustering method, model-based clustering method is applied. We can choose K-means by setting ` clustermethod = 'Kmeans'`. 
 
 To obtain detected SE genes, we can check the adjusted p-values. 
 
