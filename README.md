@@ -36,7 +36,7 @@ In this function, we need to determine which normalization method is used. If `n
 
 The output of this function is a dataframe and each row is the result for one gene. 
 
-![detect_result](/images/detect_result.png)
+![detect_result](/images/detect_result.PNG)
 
 To obtain detected SE genes, we can check the Bayes factor favering <img src="https://render.githubusercontent.com/render/math?math=\theta < 0"> than <img src="https://render.githubusercontent.com/render/math?math=\theta \geq 0">. 
 
