@@ -28,7 +28,7 @@ In the above function, `min_total` is the minimum total counts, and locations ar
 
 After filteration, we can run the main detection function `Boost_Ising`. 
 
-Notes: Matrix is the only format acceptable for the BOOST-Ising function. Each column is the expression counts for a gene. Column names are gene names. 
+Notes: Matrix is the only format acceptable for the 'count' input in the BOOST-Ising function. Each column is the expression counts for a gene. Column names are gene names. 
 ```r
 detect_result <- Boost_Ising (count_f,loc_f, norm_method = 'tss', clustermethod = 'MGC')
 ```
