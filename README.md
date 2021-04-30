@@ -34,7 +34,7 @@ detect_result <- Boost_Ising (count_f,loc_f, norm_method = 'tss', clustermethod 
 ```
 In this function, we need to determine which normalization method is used. If `norm_method = 1`, counts data are devided by the summation of total counts for each location, which is at default. There are also other six options for normalization methods: 'q75', 'rle', 'tmm', 'n-vst', 'a-vst' and 'log'. For details of normalization methods, see Table 1 in the supplementary notes for the paper. For clustering method, model-based clustering method is applied. We can choose K-means by setting ` clustermethod = 'Kmeans'`. 
 
-To obtain detected SE genes, we can check the Bayes factor favering $\theta < 0$ than $\theta \geq 0$. 
+To obtain detected SE genes, we can check the Bayes factor favering $$\theta < 0$$ than $$\theta \geq 0$$. 
 
 ```r
 SE_gene <- rownames(detect_result)[which(detect_result$BF_neg > 150)]
