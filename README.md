@@ -1,8 +1,8 @@
-# BOOST-Potts
+# BOOST-Ising
 
-BOOST-Potts is a method to detect genes with spatial expression patterns (SE genes) in spatial transcriptomics datasets. It is a Bayesian modeling framework for the analysis of single-gene count data on a large-scale lattice defined by a number of array spots. For each gene, expression counts are clustered into two groups - high-expression level and low-expression level, and spatial pattern is defined by the interaction between these two groups in Potts model. 
+BOOST-Ising is a method to detect genes with spatial expression patterns (SE genes) in spatial transcriptomics datasets. It is a Bayesian modeling framework for the analysis of single-gene count data on a large-scale lattice defined by a number of array spots. For each gene, expression counts are clustered into two groups - high-expression level and low-expression level, and spatial pattern is defined by the interaction between these two groups in a modified Ising model. 
 
-# How to use BOOST-Potts functions
+# How to use BOOST-Ising functions
 
 We use `MouseOB dataset` (Spatial Transcriptomics assay of a slice of Mouse Olfactory Bulb) as an example. This dataset can be found in data file.
 
@@ -10,7 +10,7 @@ Firstly, we need to load data and functions
 
 ```r
 load("data/olfactory_bulb_11.Rdata")
-source("functions/Boost_HP_function.R")
+source("functions/Boost_Ising_function.R")
 ```
 
 `MouseOB dataset` includes two parts: `count data` and `location data`. In count data, each column is the expression counts for a gene. Location data is the coordinates to indecate which locations of the tissue slice has been sampled.
@@ -24,15 +24,17 @@ count_f <- filter_result[[2]]
 ```
 In the above function, `min_total` is the minimum total counts, and locations are selected if the total counts for all genes in this location is not less than it. `min_percentage` is the minimum percentage of non-zero counts for genes. If a gene has so many zero counts that the percentage of non-zero count is less than this threshold, this gene will be removed. 
 
-After filteration, we can run the main detection function `Boost_HP`. 
+After filteration, we can run the main detection function `Boost_Ising`. 
+
+Notes: Matrix is the only format acceptable for the BOOST-Ising function. Each column is the expression counts for a gene. Column names are gene names. 
 ```r
-detect_result <- Boost_HP (count_f,loc_f, normalization = 1, clustermethod = 'Kmeans', dout = 3,  sigma = 1, prior = 'N', prior_omega = 'noninfo')
+detect_result <- Boost_Ising (count_f,loc_f, norm_method = 'tss', clustermethod = 'MGC')
 ```
-In this function, we need to determine which normalization method is used. If `normalization = 1`, counts data are devided by the summation of total counts for each location. If  `normalization = 2`, we use the normalization method mentioned in [SpatialDE](https://www.nature.com/articles/nmeth.4636), which is set as default. For clustering method, model-based clustering method is applied. We can choose K-means by setting ` clustermethod = 'Kmeans'`. 
+In this function, we need to determine which normalization method is used. If `norm_method = 1`, counts data are devided by the summation of total counts for each location, which is at default. There are also other six options for normalization methods: 'q75', 'rle', 'tmm', 'n-vst', 'a-vst' and 'log'. For details of normalization methods, see Table 1 in the supplementary notes for the paper. For clustering method, model-based clustering method is applied. We can choose K-means by setting ` clustermethod = 'Kmeans'`. 
 
-To obtain detected SE genes, we can check the adjusted p-values. 
+To obtain detected SE genes, we can check the Bayes factor favering $\theta < 0$ than $\theta \geq 0$. 
 
 ```r
-SE_gene <- rownames(detect_result)[which(detect_result$pvalues_neg_ad< 0.05)]
+SE_gene <- rownames(detect_result)[which(detect_result$BF_neg > 150)]
 ```
 
