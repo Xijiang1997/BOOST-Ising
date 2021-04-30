@@ -17,11 +17,11 @@ IntegerMatrix rectangle2matrix(int H, int L, int H_min, int H_max, int L_min, in
 IntegerMatrix potts2ising(IntegerMatrix Delta, int k);
 arma::mat potts_c_omega(arma::mat P, NumericMatrix Theta, NumericVector omega);
 arma::mat potts2_c(arma::mat P, NumericMatrix Theta, IntegerMatrix Delta);
-Rcpp::List potts_2_omega(arma::mat P, double sigma, double omega_mean, double omega_sigma, double theta_initial, double omega_initial, int NN);
+Rcpp::List potts_2_omega(arma::mat P, double sigma, double omega_mean, double omega_sigma, double theta_initial, double omega_initial);
 
 
 // [[Rcpp::export]]
-Rcpp::List potts_2_omega_laplace(arma::mat P, double sigma,  double omega_mean, double omega_sigma, double theta_initial, double omega_initial, int NN) {
+Rcpp::List potts_2_omega_laplace(arma::mat P, double sigma,  double omega_mean, double omega_sigma, double theta_initial, double omega_initial) {
   // Read data information
   int H = P.n_rows;
   int L = P.n_cols;
@@ -34,7 +34,7 @@ Rcpp::List potts_2_omega_laplace(arma::mat P, double sigma,  double omega_mean, 
   double sigma_omega = omega_sigma;
   
   // Set algorithm settings
-  int iter = NN;
+  int iter = 10000;
   int burn = iter/2;
   double Theta_s = theta_initial;
   int M = 3;
@@ -172,7 +172,7 @@ Rcpp::List potts_2_omega_laplace(arma::mat P, double sigma,  double omega_mean, 
 }
 
 // [[Rcpp::export]]
-Rcpp::List potts_2_omega(arma::mat P, double sigma, double omega_mean, double omega_sigma, double theta_initial, double omega_initial, int NN) {
+Rcpp::List potts_2_omega(arma::mat P, double sigma, double omega_mean, double omega_sigma, double theta_initial, double omega_initial) {
   // Read data information
   int H = P.n_rows;
   int L = P.n_cols;
@@ -185,7 +185,7 @@ Rcpp::List potts_2_omega(arma::mat P, double sigma, double omega_mean, double om
   double sigma_omega = omega_sigma;
   
   // Set algorithm settings
-  int iter = NN;
+  int iter = 10000;
   int burn = iter/2;
   double Theta_s = theta_initial;
   int M = 3;
