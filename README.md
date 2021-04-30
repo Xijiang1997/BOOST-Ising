@@ -6,6 +6,8 @@ BOOST-Ising is a method to detect genes with spatial expression patterns (SE gen
 
 We use `MouseOB dataset` (Spatial Transcriptomics assay of a slice of Mouse Olfactory Bulb) as an example. This dataset can be found in data file.
 
+Make sure you have installed R packages 'mclust', 'Rcpp' and 'edgeR'.
+
 Firstly, we need to load data and functions
 
 ```r
