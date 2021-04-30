@@ -8,7 +8,7 @@ We use `MouseOB dataset` (Spatial Transcriptomics assay of a slice of Mouse Olfa
 
 Make sure you have installed R packages 'mclust', 'Rcpp' and 'edgeR'.
 
-Firstly, we need to load data and functions
+Firstly, we need to load data and functions.
 
 ```r
 load("data/olfactory_bulb_11.Rdata")
