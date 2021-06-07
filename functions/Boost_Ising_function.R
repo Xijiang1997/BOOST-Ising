@@ -151,7 +151,7 @@ if(norm_method == "tss")
     set.seed(123)
     for (i in 1:gene_num){
     mIQR <- IQR(count_nor[,i])
-    list_large <- which(count_nor[,i] > median(count_nor[,i]) + dout*mIQR)
+    list_large <- which(count_nor[,i] > quantile(count_nor[,i], 0.75) + dout*mIQR)
     list_small <- which(count_nor[,i]  == 0)
 
     if (mIQR == 0){list_large <- NULL}
@@ -194,7 +194,7 @@ if(norm_method == "tss")
     set.seed(123)
     for (i in 1:gene_num){
       mIQR <- IQR(count_nor[,i])
-    list_large <- which(count_nor[,i] > median(count_nor[,i]) + dout*mIQR)
+    list_large <- which(count_nor[,i] > quantile(count_nor[,i], 0.75) + dout*mIQR)
     list_small <- NULL
 
     if (mIQR == 0){list_large <- NULL}
