@@ -24,11 +24,17 @@ transform_data <- function(count, loc){
 filter_count <- function(count, sample_info, min_total = 10,min_percentage = 0.1){
   gene_num <- ncol(count)
   sample_num <- nrow(count)
+  if(sum(rowSums(count) < min_total) == 0){
+    sample_f <- sample_info
+    count_f <- count[,-(which(colSums(count == 0) > (1-min_percentage)*sample_num))]
+  }
+  else{
   sample_f <- sample_info[-which(rowSums(count)<min_total),]
   count_f <- count[-which(rowSums(count)<min_total),-(which(colSums(count[-which(rowSums(count)<min_total),] == 0) > (1-min_percentage)*sample_num))]
-  
+  }
   return(list(sample_f,count_f))
 }
+
 
 # main function
 Boost_Ising <- function(count,sample_info, norm_method = 'tss', clustermethod = 'MGC')
