@@ -314,6 +314,8 @@ run.ising <- function(count,sample_info){
   count_binary <- count
   sample_info <- round(sample_info)
   gene_name <- colnames(count)
+  gene_num <- ncol(count)
+  sample_num <- nrow(count)
   # transform to array
   P_nor <- transform_data(count_binary,sample_info)
   # estimate parameters in Ising model
