@@ -18,7 +18,7 @@ The following R packages are required to run the model:
 Firstly, we need to load data and functions.
 
 ```r
-load("data/olfactory_bulb_11.Rdata")
+load("data/real data/olfactory_bulb_11.Rdata")
 source("functions/Boost_Ising_function.R")
 ```
 
