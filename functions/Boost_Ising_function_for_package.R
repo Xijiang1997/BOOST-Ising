@@ -38,7 +38,18 @@ filter.st<- function(count, sample_info, min_total = 10,min_percentage = 0.1){
 
 
 # plot ST data
-plot.st <- function(count, loc, main = "") {
+plot.st <- function(count, loc, gene_name = NULL, main = NULL) {
+  if (is.null(colnames(count))){stop('Please provide gene names as column names of count matrix')}
+  if (is.null(gene_name) == FALSE){
+    if (gene_name %in% colnames(count)){
+      count <- count[, gene_name]
+    } else {stop('Please enter a valid gene name')}
+  }
+  else{
+    gene_name <- colnames(count)[which(colSums(count) == max(colSums(count)))]
+    count <- count[, gene_name]
+  }
+  if (is.null(main)){main <- gene_name}
   data <- data.frame(expr = as.vector(count), x = loc[, 1], y = loc[, 2]);
   ggplot(data) + geom_point(mapping = aes(x = x, y = y, color = expr), size = 4) + 
     coord_fixed(ratio = 1) + scale_color_distiller(palette = "Spectral") + 
@@ -209,6 +220,9 @@ normalize.st <- function(count, norm_method = 'tss'){
     ## All the above normalized counts were negative so reversed their signs
     count_nor <- db.norm
   }
+   else if(norm_method == 'none'){
+     count_nor <- count
+   }
   else
   {
     stop("Please choose a valid normalization method")
@@ -310,65 +324,93 @@ cluster.st <- function(count, clustermethod = 'MGC'){
 }
 
 # run BOOST-Ising 
-run.ising <- function(count,sample_info){
+run.ising <- function(count,sample_info, chain = 1){
+  if(is.vector(count) == FALSE){
+    stop('Please convert the count matrix for one gene as vector')
+  }
+  if(length(count) != dim(sample_info)[1]){
+    stop('Length of count does not match the number of sample points')
+  }
   count_binary <- count
   sample_info <- round(sample_info)
   gene_name <- colnames(count)
-  gene_num <- ncol(count)
   sample_num <- nrow(count)
   # transform to array
   P_nor <- transform_data(count_binary,sample_info)
   # estimate parameters in Ising model
-  theta_est <- array(0,dim=c(5000, gene_num))
-  omega_est <- array(0,dim=c(5000, gene_num))
-  
   mean1 = 1
   sigma1 = 2.5
   is_normal = 1
   sigma = 1
-  
-  for (i in 1:gene_num){
-    res <- potts_2_omega(P_nor[,,i], sigma, mean1, sigma1, rnorm(1, mean = 0, sd = 0.333), rnorm(1, mean = 1, sd = 2.5));
-    if (dim(res$theta)[2] > 0 & dim(res$omega)[2] > 0){
+
+  theta_est <- matrix(0, nrow = 5000, ncol = chain)
+  omega_est <- matrix(0, nrow = 5000, ncol = chain)
+  for (i in 1:chain){
+    print(paste0('Chain', i))
+    res <- potts_2_omega(P_nor, sigma, mean1, sigma1, rnorm(1, mean = 0, sd = 0.333), rnorm(1, mean = 1, sd = 2.5));
+  if (dim(res$theta)[2] > 0 & dim(res$omega)[2] > 0){
       theta_est[,i] <- res$theta[5001:10000,1]
       omega_est[,i] <- res$omega[5001:10000,1]
     }}
-  colnames(theta_est) <- colnames(count)
-  colnames(omega_est) <- colnames(count)
   return(list(theta_est, omega_est))
 }
 
-# summarize BOOST-Ising result
-summerize <- function(ising_result){
+
+# numerically summarize BOOST-Ising result
+numeric.sum <- function(ising_result){
+theta_est <- ising_result[[1]]
+omega_est <- ising_result[[2]]
+chain  <- ncol(theta_est)
+
+omega_mean <- mean(omega_est)
+theta_mean <- mean(theta_est)
+
+theta_CI_low <- quantile(theta_est,0.025)
+theta_CI_high <- quantile(theta_est,0.975)
+
+omega_CI_low <- quantile(theta_est,0.025)
+omega_CI_high <- quantile(theta_est,0.975)
+
+theta_sd <- sd(theta_est)
+omega_sd <- sd(omega_est)
+
+result <- data.frame(mean = c(theta_mean, omega_mean), CI_low = c(theta_CI_low, omega_CI_low), CI_high = c(theta_CI_high, omega_CI_high), SD = c(theta_sd, omega_sd))
+rownames(result) <- c('theta', 'omega')
+
+
+pvalues_neg <- sum(theta_est>=0)/(5000*chain)
+pvalues_pos <- sum(theta_est<=0)/(5000*chain)
+
+BF_neg <- (1 - pvalues_neg)/(pvalues_neg + 0.000000001)
+BF_pos <- (1 - pvalues_pos)/(pvalues_pos + 0.000000001)
+
+infer_result <- data.frame(pvalues.neg  = pvalues_neg, BF.neg = BF_neg, pvalues.pos  = pvalues_pos, BF.pos = BF_pos)
+
+return(list(statistics = result, inference = infer_result))
+}
+  
+# graphically summarize BOOST-Ising result
+graphical.sum <- function(ising_result){
   theta_est <- ising_result[[1]]
   omega_est <- ising_result[[2]]
+  chain  <- ncol(theta_est)
   
-  gene_num <- ncol(theta_est)
+  par(mfrow=c(2,2))    # set the plotting area into a 1*2 array
+  hist(theta_est, breaks = 50, main = 'Histogram of theta', xlab = 'theta')
+  hist(omega_est, breaks = 50, main = 'Histogram of omega',xlab = 'omega')
   
-  theta_CI_low <- apply(theta_est, 2, function(x){quantile(x,0.025)})
-  theta_CI_high <- apply(theta_est, 2, function(x){quantile(x,0.975)})
-  
-  theta_mean <- apply(theta_est, 2, mean)
-  omega_mean <- apply(omega_est, 2, mean)
-  
-  omega_CI_low <- apply(omega_est, 2, function(x){quantile(x,0.025)})
-  omega_CI_high <- apply(omega_est, 2, function(x){quantile(x,0.975)})
-  
-  # detect SV genes
-  pvalues_neg <- numeric(gene_num)
-  for (i in 1:gene_num){
-    pvalues_neg[i] <- sum(theta_est[,i]>=0)/5000
+  plot(1:5000, theta_est[, 1], main = 'Traceplot of theta', xlab = 'iteration', col=2, type = 'l', ylab = 'theta')
+  if (chain >= 2){
+    for (i in 2:chain){
+      lines(1:5000, theta_est[,i], col = i +1)
+    }
   }
   
-  pvalues_pos <- numeric(gene_num)
-  for (i in 1:gene_num){
-    pvalues_pos[i] <- sum(theta_est[,i]<=0)/5000
+  plot(1:5000, omega_est[, 1], main = 'Traceplot of omega', xlab = 'iteration', col=2, type = 'l', ylab = 'omega')
+  if (chain >= 2){
+    for (i in 2:chain){
+      lines(1:5000, omega_est[,i], col = i+1)
+    }
   }
-  
-  BF_neg <- pvalues_pos/(pvalues_neg + 0.000000001)
-  BF_pos <- pvalues_neg/(pvalues_pos + 0.000000001)
-  results <- data.frame(theta_mean, theta_CI_low, theta_CI_high, omega_mean,omega_CI_low,omega_CI_high, BF_neg, BF_pos)
-  rownames(results) <- colnames(theta_est)
-  return(results)
 }
 
