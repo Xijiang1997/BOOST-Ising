@@ -64,6 +64,22 @@ plot.st <- function(count, loc, gene_name = NULL, main = NULL) {
           legend.position="right")
 }
 
+# plot ST data
+plot.st.binary <- function(count, loc, main = NULL) {
+  data <- data.frame(expr = as.factor(as.vector(count)), x = loc[, 1], y = loc[, 2]);
+  ggplot(data) + geom_point(mapping = aes(x = x, y = y, color = expr), size = 4) + 
+    coord_fixed(ratio = 1) + scale_color_manual(values = c("1" = "blue", '2' = 'red'))  + 
+    theme_classic() + labs(color = "", title = main) + 
+    theme(axis.line=element_blank(),
+          axis.text.x=element_blank(),
+          axis.text.y=element_blank(),
+          axis.ticks=element_blank(),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank(),
+          plot.title=element_text(hjust = 0.5),
+          legend.position="right")
+}
+
 # get size factor estimate
 get.size.factor <- function(count, norm_method = 'tss'){
   gene_num <- ncol(count)
