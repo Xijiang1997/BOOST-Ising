@@ -180,7 +180,7 @@ if(norm_method == "tss")
       }
       else
       {
-      k <- Mclust(count_nor[list_remain,i], G=2)
+      k <- Mclust(count_nor[list_remain,i], G=2, verbose = FALSE)
       if (k$parameters$mean[1]>k$parameters$mean[2])
       {count_binary[list_remain,i] <- 3 - k$classification}
       else {count_binary[list_remain,i] <- k$classification}
