@@ -15,19 +15,19 @@ The following R packages are required to run the model:
 - edgeR
 - lattice
 
-Firstly, we need to load data and functions.
+Firstly, we need to load data and functions. For demostration, we load the example data with only 10 genes from the mouse olfactory bulb ST data. 
 
 ```r
-load("data/real data/olfactory_bulb_11.Rdata")
+load("data/toy_example.Rdata")
 source("functions/Boost_Ising_function.R")
 ```
 
-`MouseOB dataset` includes two parts: `count data` and `location data`. In count data, each column is the expression counts for a gene. Location data is the coordinates to indecate which locations of the tissue slice has been sampled.
+The dataset includes two parts: `count data` and `location data`. In count data, each column is the expression counts for a gene. Location data is the coordinates to indecate which locations of the tissue slice has been sampled.
 
 Before detecting SE genes, we need to filter the dataset, which can remove sample locations and genes with few expression points. 
 
 ```r
-filter_result <- filter_count(count, loc, min_total = 10, min_percentage = 0.1)
+filter_result <- filter_count(count, loc, min_total = 10, min_percentage = 0)
 loc_f <- filter_result[[1]]
 count_f <- filter_result[[2]]
 ```
