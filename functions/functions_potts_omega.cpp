@@ -303,7 +303,7 @@ Rcpp::List potts_2_omega(arma::mat P, double sigma, double omega_mean, double om
     // Monitor the process
     if (i*100/iter == count_2)
     {
-      Rcout <<count_2<< "% has been done\n";
+      //Rcout <<count_2<< "% has been done\n";
       count_2 = count_2 + 10;
     }
     count = 0;
