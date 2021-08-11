@@ -1,6 +1,6 @@
 # BOOST-Ising
 
-BOOST-Ising is a method to detect genes with spatial expression patterns (SE genes) in spatial transcriptomics datasets. It is a Bayesian modeling framework for the analysis of single-gene count data on a large-scale lattice defined by a number of array spots. For each gene, expression counts are clustered into two groups - high-expression level and low-expression level, and spatial pattern is defined by the interaction between these two groups in a modified Ising model. 
+BOOST-Ising is a method to detect spatially variable (SV) genes in spatial transcriptomics (ST) datasets. It is a Bayesian modeling framework for the analysis of single-gene count data on a large-scale lattice defined by a number of array spots. For each gene, expression counts are clustered into two groups - high-expression level and low-expression level, and spatial pattern is defined by the interaction between these two groups in a modified Ising model. 
 
 # How to use BOOST-Ising functions
 
@@ -24,7 +24,7 @@ source("functions/Boost_Ising_function.R")
 
 The dataset includes two parts: `count data` and `location data`. In count data, each column is the expression counts for a gene. Location data is the coordinates to indecate which locations of the tissue slice has been sampled.
 
-Before detecting SE genes, we need to filter the dataset, which can remove sample locations and genes with few expression points. 
+Before detecting SV genes, we need to filter the dataset, which can remove sample locations and genes with few expression points. 
 
 ```r
 filter_result <- filter_count(count, loc, min_total = 10, min_percentage = 0)
@@ -47,9 +47,9 @@ The output of this function is a dataframe and each row is the result for one ge
 
 For each gene, 'theta_mean', 'theta_CI_low' and 'theta_CI_high' is the estimated posterior mean and lower and upper bounds of 95% confidence interval for interaction parameter <img src="https://render.githubusercontent.com/render/math?math=\theta"> in the modified Ising model. 'omega_mean', 'omega_CI_low' and 'omega_CI_high' is the estimated posterior mean and lower and upper bounds of 95% confidence interval for first-order intensity parameter <img src="https://render.githubusercontent.com/render/math?math=\omega"> in the modified Ising model. 'BF_neg' is the Bayes factor favoring <img src="https://render.githubusercontent.com/render/math?math=\theta < 0"> against <img src="https://render.githubusercontent.com/render/math?math=\theta \geq 0">, while 'BF_pos' is the Bayes factor favoring <img src="https://render.githubusercontent.com/render/math?math=\theta > 0"> against <img src="https://render.githubusercontent.com/render/math?math=\theta \leq 0">.
 
-To obtain detected SE genes, we can check the Bayes factor favoring <img src="https://render.githubusercontent.com/render/math?math=\theta < 0"> against <img src="https://render.githubusercontent.com/render/math?math=\theta \geq 0">. 
+To obtain detected SV genes, we can check the Bayes factor favoring <img src="https://render.githubusercontent.com/render/math?math=\theta < 0"> against <img src="https://render.githubusercontent.com/render/math?math=\theta \geq 0">. 
 
 ```r
-SE_gene <- rownames(detect_result)[which(detect_result$BF_neg > 150)]
+SV_gene <- rownames(detect_result)[which(detect_result$BF_neg > 150)]
 ```
 
