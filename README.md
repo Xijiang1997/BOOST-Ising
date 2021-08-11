@@ -15,7 +15,7 @@ The following R packages are required to run the model:
 - edgeR
 - lattice
 
-Firstly, we need to load data and functions. For demostration, we load the example data with only 10 genes from the mouse olfactory bulb ST data. 
+Firstly, we need to load data and functions. For demonstration, we load the example data with only 10 genes from the mouse olfactory bulb ST data. 
 
 ```r
 load("data/toy_example.Rdata")
