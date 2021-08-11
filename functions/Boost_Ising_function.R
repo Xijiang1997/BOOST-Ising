@@ -294,7 +294,7 @@ if(norm_method == "tss")
     }
    if (floor(i*100/gene_num) == count_2)
   {
-    print(paste0(count_2, ' has been done\n'))
+    print(paste0(count_2, ' has been done'))
     count_2 = count_2 + 10;
   }
   }
