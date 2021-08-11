@@ -274,7 +274,7 @@ if(norm_method == "tss")
       sigma1 = 2.5
       is_normal = 1
       sigma = 1
-
+  count_2 <- 10
   for (i in 1:gene_num){
    
     res <- potts_2_omega(P_nor[,,i], sigma, mean1, sigma1, rnorm(1, mean = 0, sd = 0.333), rnorm(1, mean = 1, sd = 2.5));
@@ -291,7 +291,13 @@ if(norm_method == "tss")
 
     theta_mean[i] <- mean(res$theta[5001:10000,1])
     omega_mean[i] <- mean(res$omega[5001:10000,1])
-    }}
+    }
+   if (floor(i*100/gene_num) == count_2)
+  {
+    print(paste0(count_2, ' has been done\n'))
+    count_2 = count_2 + 10;
+  }
+  }
   
   
   # detect SV genes
