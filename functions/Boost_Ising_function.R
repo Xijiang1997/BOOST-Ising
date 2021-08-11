@@ -145,7 +145,7 @@ if(norm_method == "tss")
   }
   else
   {
-    print("Please choose a normalization method")
+    stop("Please choose a normalization method")
   }
   
   # clustering
@@ -162,7 +162,7 @@ if(norm_method == "tss")
 
     if (mIQR == 0){list_large <- NULL}
     list_remain <- setdiff(1:sample_num, union(list_large, list_small))
-    if (length(list_remain) > 0){
+    if (length(list_remain) > 2){
       if (min(count_nor[list_remain,i]) == max(count_nor[list_remain,i]))
       {
         count_binary[list_remain,i] <- 1
@@ -174,6 +174,12 @@ if(norm_method == "tss")
       {count_binary[list_remain,i] <- 3 - k$classification}
       else {count_binary[list_remain,i] <- k$classification}
     }}
+      else if (length(list_remain) == 1){
+        count_binary[list_remain,i] <- sample(c(1, 2), 1)
+      }
+     else if (length(list_remain) == 2){
+       count_binary[list_remain,i] <- order(count_nor[list_remain,i])
+     }
       count_binary[list_large,i] <- 2
       count_binary[list_small,i] <- 1
       
@@ -206,6 +212,7 @@ if(norm_method == "tss")
     if (mIQR == 0){list_large <- NULL}
     list_remain <- setdiff(1:sample_num, list_large)
     
+    if (length(list_remain) > 2){
       if (min(count_nor[list_remain,i]) == max(count_nor[list_remain,i]))
       {
         count_binary[list_remain,i] <- 1
@@ -214,7 +221,14 @@ if(norm_method == "tss")
       k <- kmeans(count_nor[list_remain,i], 2, nstart = 25)
       if (k$centers[1]>k$centers[2])
       {count_binary[list_remain,i] <- 3 - k$cluster}
-      else {count_binary[list_remain,i] <- k$cluster}}
+      else {count_binary[list_remain,i] <- k$cluster}}}
+      else if (length(list_remain) == 1){
+        count_binary[list_remain,i] <- sample(c(1, 2), 1)
+      }
+     else if (length(list_remain) == 2){
+       count_binary[list_remain,i] <- order(count_nor[list_remain,i])
+     }
+      
       count_binary[list_large,i] <- 2
 
       count_binary[list_small,i] <- 1
