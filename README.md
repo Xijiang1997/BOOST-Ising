@@ -43,7 +43,7 @@ In this function, we need to determine which normalization method is used. If `n
 
 The output of this function is a dataframe and each row is the result for one gene. 
 
-![detect_result](/images/detect_result.PNG)
+![detect_result](detect_result.PNG)
 
 For each gene, 'theta_mean', 'theta_CI_low' and 'theta_CI_high' is the estimated posterior mean and lower and upper bounds of 95% confidence interval for interaction parameter <img src="https://render.githubusercontent.com/render/math?math=\theta"> in the modified Ising model. 'omega_mean', 'omega_CI_low' and 'omega_CI_high' is the estimated posterior mean and lower and upper bounds of 95% confidence interval for first-order intensity parameter <img src="https://render.githubusercontent.com/render/math?math=\omega"> in the modified Ising model. 'BF_neg' is the Bayes factor favoring <img src="https://render.githubusercontent.com/render/math?math=\theta < 0"> against <img src="https://render.githubusercontent.com/render/math?math=\theta \geq 0">, while 'BF_pos' is the Bayes factor favoring <img src="https://render.githubusercontent.com/render/math?math=\theta > 0"> against <img src="https://render.githubusercontent.com/render/math?math=\theta \leq 0">.
 
