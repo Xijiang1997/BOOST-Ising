@@ -20,21 +20,43 @@ transform_data <- function(count, loc){
   return(array_y)
 }
 
+vectorized_pdist <- function(A,B){
+  an = apply(A, 1, function(rvec) crossprod(rvec,rvec))
+  bn = apply(B, 1, function(rvec) crossprod(rvec,rvec))
+  m = nrow(A)
+  n = nrow(B)
+  tmp = matrix(rep(an, n), nrow=m)
+  tmp = tmp +  matrix(rep(bn, m), nrow=m, byrow=TRUE)
+  sqrt( tmp - 2 * tcrossprod(A,B) )
+}
+
 
 # filter data
-filter.st<- function(count, sample_info, min_total = 10,min_percentage = 0.1){
+filter.st <- function(count, sample_info, min_total = 10,min_percentage = 0.1){
   gene_num <- ncol(count)
   sample_num <- nrow(count)
   if(sum(rowSums(count) < min_total) == 0){
-    sample_f <- sample_info
-    count_f <- count[,-(which(colSums(count == 0) > (1-min_percentage)*sample_num))]
-  }
+    if (sum(colSums(count == 0) > (1-min_percentage)*sample_num) > 0){
+      sample_f <- sample_info
+      count_f <- count[,-(which(colSums(count == 0) > (1-min_percentage)*sample_num))]
+    }
+    else{
+      sample_f <- sample_info
+      count_f <- count
+    }}
   else{
-  sample_f <- sample_info[-which(rowSums(count)<min_total),]
-  count_f <- count[-which(rowSums(count)<min_total),-(which(colSums(count[-which(rowSums(count)<min_total),] == 0) > (1-min_percentage)*sample_num))]
+    if (sum(colSums(count[-which(rowSums(count)<min_total),] == 0) > (1-min_percentage)*sample_num) > 0){
+      sample_f <- sample_info[-which(rowSums(count)<min_total),]
+      count_f <- count[-which(rowSums(count)<min_total),-(which(colSums(count[-which(rowSums(count)<min_total),] == 0) > (1-min_percentage)*sample_num))]
+    }
+    else{
+      sample_f <- sample_info[-which(rowSums(count)<min_total),]
+      count_f <- count[-which(rowSums(count)<min_total),]
+    }
   }
   return(list(sample_f,count_f))
 }
+
 
 
 # plot ST data
@@ -78,6 +100,35 @@ plot.st.binary <- function(count, loc, main = NULL) {
           axis.title.y=element_blank(),
           plot.title=element_text(hjust = 0.5),
           legend.position="right")
+}
+             
+# get neighbor information
+# For 10x data, n_neighbor = 6; For ST data, n_neighbor = 4
+get.neighbor <- function(loc, n_neighbor){
+  P <- matrix(0, nrow = nrow(loc), ncol = n_neighbor)
+  loc <- as.matrix(loc)
+  if (n_neighbor == 4){
+    loc <- round(loc)
+    aa <- sqrt(2)
+  } else if (n_neighbor == 6){
+    aa <- sqrt(3)
+  } else {aa <- 1.2}
+  
+  dist_matrix <- vectorized_pdist(loc, loc)
+  min_dist <- min(dist_matrix[dist_matrix > 0])
+  
+  dist_threshold <- min_dist*(aa - 1)*0.5 + min_dist
+  #print(min_dist)
+  #print(dist_threshold)
+  
+  for (i in 1:nrow(loc)){
+    k <- 1
+    for (j in 1:nrow(loc)){
+      if (dist_matrix[i, j] > 0 & dist_matrix[i, j] < dist_threshold){
+        P[i, k] <- j
+        k <- k + 1
+      }}}
+  return(P)
 }
 
 # get size factor estimate
@@ -340,7 +391,7 @@ cluster.st <- function(count, clustermethod = 'MGC'){
 }
 
 # run BOOST-Ising 
-run.ising <- function(count,sample_info, chain = 1){
+run.ising <- function(count,neighbor_info, chain = 1){
   if(is.vector(count) == FALSE){
     stop('Please convert the count matrix for one gene as vector')
   }
@@ -351,8 +402,7 @@ run.ising <- function(count,sample_info, chain = 1){
   sample_info <- round(sample_info)
   gene_name <- colnames(count)
   sample_num <- nrow(count)
-  # transform to array
-  P_nor <- transform_data(count_binary,sample_info)
+  
   # estimate parameters in Ising model
   mean1 = 1
   sigma1 = 2.5
@@ -363,7 +413,7 @@ run.ising <- function(count,sample_info, chain = 1){
   omega_est <- matrix(0, nrow = 5000, ncol = chain)
   for (i in 1:chain){
     print(paste0('Chain', i))
-    res <- potts_2_omega(P_nor, sigma, mean1, sigma1, rnorm(1, mean = 0, sd = 0.333), rnorm(1, mean = 1, sd = 2.5));
+    res <- potts_2_omega(matrix(count, ncol =1),neighbor_info , sigma, mean1, sigma1, rnorm(1, mean = 0, sd = 0.333), rnorm(1, mean = 1, sd = 2.5), 10000);
   if (dim(res$theta)[2] > 0 & dim(res$omega)[2] > 0){
       theta_est[,i] <- res$theta[5001:10000,1]
       omega_est[,i] <- res$omega[5001:10000,1]
