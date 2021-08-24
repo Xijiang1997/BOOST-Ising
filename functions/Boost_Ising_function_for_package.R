@@ -6,7 +6,7 @@ library(edgeR)
 library(ggplot2)
 
 source("functions/functions_potts.R");
-Rcpp::sourceCpp('functions/functions_potts_omega.cpp');
+Rcpp::sourceCpp('functions/functions_potts_omega_new.cpp');
 
 transform_data <- function(count, loc){
   array_y <- array(0, dim = c((max(loc[,1])-min(loc[,1])+1),(max(loc[,2])-min(loc[,2])+1),ncol(count)))
