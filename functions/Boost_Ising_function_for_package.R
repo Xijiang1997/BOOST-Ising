@@ -395,11 +395,11 @@ run.ising <- function(count,neighbor_info, chain = 1){
   if(is.vector(count) == FALSE){
     stop('Please convert the count matrix for one gene as vector')
   }
-  if(length(count) != dim(sample_info)[1]){
+  if(length(count) != dim(neighbor_info)[1]){
     stop('Length of count does not match the number of sample points')
   }
   count_binary <- count
-  sample_info <- round(sample_info)
+  
   gene_name <- colnames(count)
   sample_num <- nrow(count)
   
